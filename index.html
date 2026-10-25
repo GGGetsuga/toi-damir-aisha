@@ -11,7 +11,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500;1,700&family=Montserrat:wght@400;500;600&display=swap&subset=cyrillic-ext" rel="stylesheet">
 <style>
-  /* ВСТАВЬ СЮДА URL веб-приложения Apps Script (см. инструкцию) */
   :root{
     --bg:#0f2a3d; --bg2:#123650; --card:#fbf6ec; --gold:#c9a24b; --gold2:#e6c97a;
     --ink:#2b2216; --muted:#6d5f49; --ok:#2f7d4f; --no:#9a3b2f;
@@ -75,6 +74,23 @@
   .done{font-family:"Cormorant Garamond",serif;font-size:24px;line-height:1.4;padding:10px 0}
   .reveal{opacity:0;transform:translateY(18px);transition:opacity .8s,transform .8s}
   .reveal.in{opacity:1;transform:none}
+  .intro{
+    position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:18px;padding:24px;text-align:center;color:var(--card);
+    background:radial-gradient(circle at 50% 30%,var(--bg2),var(--bg) 75%);
+    transition:opacity .7s, visibility .7s;
+  }
+  .intro.hide{opacity:0;visibility:hidden}
+  .intro .t{font-family:"Cormorant Garamond",serif;font-size:40px;font-weight:700;line-height:1.1}
+  .intro .s{font-size:14px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold2)}
+  .intro svg{width:120px;height:120px;color:var(--gold)}
+  .music-btn{
+    position:fixed;right:16px;bottom:16px;z-index:40;width:52px;height:52px;border-radius:50%;
+    border:2px solid var(--gold);background:var(--card);color:var(--ink);font-size:22px;cursor:pointer;
+    box-shadow:0 6px 20px rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;
+  }
+  .music-btn.on{animation:spin 6s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
   footer{text-align:center;color:#c9d6e0;font-size:13px;margin-top:26px;opacity:.8}
   @media (max-width:400px){
     h1{font-size:38px}.card{padding:52px 20px 34px}
@@ -104,6 +120,16 @@
     </symbol>
   </defs>
 </svg>
+
+<div class="intro" id="intro">
+  <svg><use href="#horn"/></svg>
+  <div class="s">Тойға шақыру</div>
+  <div class="t">Дамир мен Айша</div>
+  <button class="btn btn-gold" id="open-btn">Шақыруды ашу</button>
+</div>
+
+<audio id="bg-music" src="music.mp3" preload="auto"></audio>
+<button class="music-btn" id="music-btn" aria-label="Музыка">♪</button>
 
 <main class="wrap">
 
@@ -180,6 +206,31 @@
 <script>
   // === НАСТРОЙКА: URL веб-приложения Google Apps Script ===
   const SCRIPT_URL = "PASTE_APPS_SCRIPT_URL_HERE";
+
+  // Музыка: старт с 17 секунды по нажатию «Шақыруды ашу»
+  const START_AT = 17;
+  const audio = document.getElementById("bg-music");
+  const musicBtn = document.getElementById("music-btn");
+  let firstPlay = true;
+
+  async function playMusic(){
+    try{
+      if (firstPlay){ audio.currentTime = START_AT; firstPlay = false; }
+      await audio.play();
+      musicBtn.classList.add("on"); musicBtn.textContent = "♪";
+    }catch(e){ musicBtn.classList.remove("on"); }
+  }
+  function pauseMusic(){ audio.pause(); musicBtn.classList.remove("on"); musicBtn.textContent = "✕"; }
+
+  // при окончании трека снова с 17 секунды
+  audio.addEventListener("ended", () => { audio.currentTime = START_AT; audio.play(); });
+
+  document.getElementById("open-btn").addEventListener("click", () => {
+    document.getElementById("intro").classList.add("hide");
+    musicBtn.style.display = "flex";
+    playMusic();
+  });
+  musicBtn.addEventListener("click", () => audio.paused ? playMusic() : pauseMusic());
 
   // Обратный отсчёт до 05.12.2026 13:00 (Астана, UTC+5)
   const target = new Date("2026-12-05T13:00:00+05:00").getTime();
